@@ -1,9 +1,10 @@
 import yfinance as yf
 import pandas as pd
 import time
+import random
 from config import SYMBOLS, PERIOD
 
-def fetch_one(symbol, retries=3):
+def fetch_one(symbol, retries=2):
     """Lấy data 1 mã, có retry khi API lỗi"""
     for attempt in range(retries):
         try:
@@ -26,12 +27,12 @@ def extract():
         df = fetch_one(sym)
         if df is not None:
             frames.append(df)
-        time.sleep(0.5)  # tránh bị rate limit
+        time.sleep(random.uniform(1.5, 3))  # tránh bị rate limit
     
     if not frames:
         raise ValueError("Không lấy được data từ bất kỳ symbol nào")
     
-    result = pd.concat(frames).reset_index()
+    result = pd.concat(frames).reset_index(drop = True)
     print(f"[INFO] Extract xong: {len(result)} records, {result['symbol'].nunique()} mã")
     return result
 
@@ -128,9 +129,8 @@ def load(df):
     """Load DataFrame vào SQL Server và lưu CSV backup"""
 
     # Bước 1: Lưu CSV backup
-    import os
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    csv_path = f"{OUTPUT_DIR}/stock_data.csv"
+    csv_path = os.path.join(OUTPUT_DIR, "stock_data.csv")
     df.to_csv(csv_path, index=False)
     print(f"[INFO] CSV saved: {csv_path}")
 
